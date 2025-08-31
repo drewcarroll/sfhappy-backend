@@ -6,7 +6,6 @@ import pandas as pd
 from dotenv import load_dotenv
 from pymongo import MongoClient, UpdateOne
 from pymongo.write_concern import WriteConcern
-from pymongo.errors import OperationFailure
 
 # ----------------- Config -----------------
 DEBUG_FILE = "debug.csv"
@@ -20,18 +19,9 @@ def log(msg: str) -> None:
 client = MongoClient("mongodb+srv://drew:drew@happyhoursf.2bapz.mongodb.net/?retryWrites=true&w=majority&appName=happyhoursf")
 db = client["happyhour"]
 restaurants = db["restaurants_raw"]
-restaurants_wc = restaurants.with_options(write_concern=WriteConcern(w=1, j=False))  # faster ingestion
-
-def ensure_indexes():
-    """Create only what's necessary."""
-    try:
-        # You upsert with _id = place.id, so no need for a separate unique index on id.
-        restaurants.create_index("photos.name", name="photos_name_idx")
-    except OperationFailure as e:
-        log(f"[WARN] Index creation issue: {e}")
+restaurants_wc = restaurants.with_options(write_concern=WriteConcern(w=1, j=False))
 
 def load_seen():
-    """Return IDs we've already stored to skip duplicates on reruns."""
     return set(x["_id"] for x in restaurants.find({}, {"_id": 1}))
 
 # ----------------- Google Places v1 -----------------
@@ -41,7 +31,7 @@ if not GOOGLE_API_KEY:
     raise RuntimeError("❌ GOOGLE_API_KEY not found in .env")
 
 NEARBY_FIELDS = "places.id,places.displayName,places.location"
-DETAIL_FIELDS = "*"  # pull entire payload for raw_json
+DETAIL_FIELDS = "*"
 
 def nearby_search(lat: float, lng: float, radius_m: int):
     global CREDITS
@@ -82,7 +72,6 @@ def get_place_details(place_id: str):
 
 # ----------------- Persistence -----------------
 def save_progress_bulk(data_rows, batch_size=200):
-    """Bulk upsert minimal indexed fields + full raw_json. Photos stored raw via d.get('photos')."""
     ops, flat_rows = [], []
     for d in data_rows:
         flat = {
@@ -102,8 +91,8 @@ def save_progress_bulk(data_rows, batch_size=200):
             "secondaryHours": d.get("regularSecondaryOpeningHours"),
             "editorialSummary": (d.get("editorialSummary") or {}).get("text"),
             "businessStatus": d.get("businessStatus"),
-            "photos": d.get("photos"),   # raw photo objects, untouched
-            "raw_json": d,               # entire payload, untouched
+            "photos": d.get("photos"),
+            "raw_json": d,
         }
 
         if not flat["_id"]:
@@ -121,16 +110,13 @@ def save_progress_bulk(data_rows, batch_size=200):
         restaurants_wc.bulk_write(ops, ordered=False)
 
     if flat_rows:
-        # Light snapshot for eyeballing results
         pd.DataFrame(flat_rows).to_csv(DEBUG_FILE, index=False)
     log(f"🍜 Upserts this batch: {len(flat_rows)} | 💾 CSV: {DEBUG_FILE}")
 
 # ----------------- Search (quad split on 20-cap) -----------------
 def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
-    # approximate meters per degree
     lat_m = (ne_lat - sw_lat) * 110_574
     lng_m = (ne_lng - sw_lng) * (111_320 * math.cos(math.radians((ne_lat + sw_lat) / 2.0)))
-    # circle radius ~ half diagonal of the box
     radius = int(math.sqrt(lat_m**2 + lng_m**2) / 2)
     center_lat = (ne_lat + sw_lat) / 2.0
     center_lng = (ne_lng + sw_lng) / 2.0
@@ -171,7 +157,6 @@ def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
 
 # ----------------- Main -----------------
 def main(ne_lat, ne_lng, sw_lat, sw_lng):
-    ensure_indexes()
     seen = load_seen()
     data_rows = []
 
