@@ -30,6 +30,9 @@ db = client["happyhour"]
 restaurants = db["restaurants_raw"]
 restaurants_wc = restaurants.with_options(write_concern=WriteConcern(w=1, j=False))
 
+def load_seen(): 
+    return set(x["_id"] for x in restaurants.find({}, {"_id": 1}))
+
 # ----------------- Google Places v1 -----------------
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
