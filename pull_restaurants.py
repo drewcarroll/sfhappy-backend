@@ -16,13 +16,19 @@ def log(msg: str) -> None:
     print(f"[LOG] {msg}")
 
 # ----------------- MongoDB -----------------
-client = MongoClient("mongodb+srv://drew:drew@happyhoursf.2bapz.mongodb.net/?retryWrites=true&w=majority&appName=happyhoursf")
+load_dotenv()
+MONGO_USER = os.getenv("MONGO_USER")
+MONGO_PASS = os.getenv("MONGO_PASS")
+
+if not (MONGO_USER and MONGO_PASS):
+    raise RuntimeError("❌ MONGO_USER or MONGO_PASS not found in .env")
+
+uri = f"mongodb+srv://{MONGO_USER}:{MONGO_PASS}@happyhoursf.2bapz.mongodb.net/?retryWrites=true&w=majority&appName=happyhoursf"
+client = MongoClient(uri)
+
 db = client["happyhour"]
 restaurants = db["restaurants_raw"]
 restaurants_wc = restaurants.with_options(write_concern=WriteConcern(w=1, j=False))
-
-def load_seen():
-    return set(x["_id"] for x in restaurants.find({}, {"_id": 1}))
 
 # ----------------- Google Places v1 -----------------
 load_dotenv()
