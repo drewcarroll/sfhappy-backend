@@ -145,7 +145,7 @@ def save_progress_bulk(data_rows, batch_size=200):
        # restaurants_wc.bulk_write(ops, ordered=False)
 
     if flat_rows:
-        pd.DataFrame(flat_rows).to_csv(DEBUG_FILE, index=False)
+        pd.DataFrame(flat_rows).to_csv(DEBUG_FILE, index=False, mode ="a", header=not os.path.exists(DEBUG_FILE))
     log(f"🍜 Upserts this batch: {len(flat_rows)} | 💾 CSV: {DEBUG_FILE}")
 
 # ----------------- Search (quad split on 20-cap) -----------------
@@ -232,7 +232,7 @@ def main(ne_lat, ne_lng, sw_lat, sw_lng):
     log(f"Nearby calls: {CREDITS['nearby']} | Detail calls: {CREDITS['details']}")
 
 if __name__ == "__main__":
-    # Example: SLO bounds (adjust as needed)
+    # Example: SF bounds
     NE_LAT, NE_LNG = 37.8108, -122.3569
     SW_LAT, SW_LNG = 37.7068, -122.5158
     main(NE_LAT, NE_LNG, SW_LAT, SW_LNG)
