@@ -6,12 +6,7 @@ from pdf2image import convert_from_bytes
 import pytesseract
 from PIL import Image
 
-def extract_text_from_pdfimg(file_url: str) -> str:
-    """
-    Extract text from a remote file (PDF, PNG, JPG).
-    - For PDFs: tries pdfplumber first, falls back to OCR per page.
-    - For images: uses OCR directly.
-    """
+def extract_data_ocr(file_url: str) -> str:
     print(f"Fetching {file_url}")
     resp = requests.get(file_url)
     resp.raise_for_status()

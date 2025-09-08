@@ -8,17 +8,6 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_happy_hour_info(raw_text: str) -> dict:
-    """
-    Calls ChatGPT (cheap model) to interpret raw menu text
-    and return structured happy hour info.
-    
-    Args:
-        raw_text (str): Text content from a menu or PDF crawl.
-    
-    Returns:
-        dict: { "happy_hour_times": "...", "happy_hour_items": [...] }
-    """
-
     prompt = f"""
     You are given text from a restaurant website or menu. 
     Extract:
@@ -43,7 +32,6 @@ def extract_happy_hour_info(raw_text: str) -> dict:
 
     content = response.choices[0].message.content.strip()
 
-    # ✅ Remove Markdown code fences if present
     if content.startswith("```"):
         content = re.sub(r"^```[a-zA-Z]*\n", "", content)
         content = re.sub(r"\n```$", "", content)
