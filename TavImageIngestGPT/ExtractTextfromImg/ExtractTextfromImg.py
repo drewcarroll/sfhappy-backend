@@ -39,7 +39,6 @@ def extract_text_from_pdfimg(file_url: str) -> str:
         img = Image.open(io.BytesIO(content))
         ocr_txt = pytesseract.image_to_string(img)
         all_text.append(ocr_txt)
-        print("this is alltext", all_text)
         
 
     else:

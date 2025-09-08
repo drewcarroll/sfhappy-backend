@@ -35,5 +35,6 @@ def extract_text_nonimg(file_url: str) -> str:
         merged = " ".join(block_texts)
         times = time_pattern.findall(merged)
         hh_blocks.append(merged)
+        print(hh_blocks)
 
     return "\n".join(hh_blocks)

@@ -18,9 +18,7 @@ def extract_files_from_results(results, base_url, valid_exts):
     """
     found_files = []
     
-    print("this is result", results)
     for result in results:
-        print("this is result in results", result)
         raw = result.get("raw_content", "")
         page_url = result.get("url", base_url)
 

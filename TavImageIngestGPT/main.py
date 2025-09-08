@@ -21,20 +21,19 @@ def main():
         try:
             response = TavilyWebCrawl(base_url)
             found_files = []
-            raw_content = ""
+            context = ""
             
             urls = list({item["url"] for item in response["results"]})
             
             # ✅ Extract text from the base URL and all found URLs
             found_files.extend([base_url])  # include base URL
             found_files.extend(urls)  # include found URLs
-            print("Found files after adding URLs:", found_files)
+
             for file in found_files:
                 text = extract_text_nonimg(file)
-                raw_content += text
-            
-            print("this is raw_content after nonimg", raw_content)
-            
+                context += file + "\n"
+                context += text
+
             # ✅ Extract more jpg/pdf files from the page content
             file_links = extract_files_from_results(response["results"], base_url, VALID_EXTS)
             found_files.extend(file_links)
@@ -42,23 +41,24 @@ def main():
             # ✅ OCR/parse text from those files
             for file in file_links:
                 if file.lower().endswith(VALID_EXTS):
-                    raw_content += extract_text_from_pdfimg(file)
+                    context += extract_text_from_pdfimg(file)
 
             all_results[base_url] = {
                 "files": file_links,
-                "raw_content": raw_content
+                "context": context
             }
             
         except Exception as e:
             print("Error processing {base_url}: {e}")
             all_results[base_url] = {"error": str(e)}
 
-    # ✅ Call ChatGPT to interpret the collected raw content
+    # ✅ Call ChatGPT to interpret the collected context
     for base_url, result in all_results.items():
         if "error" in result:
             print(f"Error for {base_url}: {result['error']}")
         else:
-            interpretation = extract_happy_hour_info(result["raw_content"])
+            print("this is context", result['context'])
+            interpretation = extract_happy_hour_info(result["context"])
             with open("happy_hour.json", "w", encoding="utf-8") as f:
                 json.dump(interpretation, f, indent=2, ensure_ascii=False)
     
