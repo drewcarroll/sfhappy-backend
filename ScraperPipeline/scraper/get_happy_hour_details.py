@@ -21,8 +21,7 @@ def get_happy_hour_details(restaurant_urls):
                     context[url] = extract_data_ocr(url)
                 else:
                     new_url = create_snapshot(url)
-                    # TODO: Uncomment this line when implemented
-                    # context[new_url] = extract_data_ocr(new_url)
+                    context[new_url] = extract_data_ocr(new_url)
             # Get LLM interpretation of the context
             interpretation = extract_happy_hour_info(context)
             all_results[base_url] = {
