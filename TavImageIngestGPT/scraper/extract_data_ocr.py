@@ -7,7 +7,6 @@ import pytesseract
 from PIL import Image
 
 def extract_data_ocr(file_url: str) -> str:
-    print(f"Fetching {file_url}")
     resp = requests.get(file_url)
     resp.raise_for_status()
     content = resp.content
@@ -35,7 +34,6 @@ def extract_data_ocr(file_url: str) -> str:
         ocr_txt = pytesseract.image_to_string(img)
         all_text.append(ocr_txt)
         
-
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 

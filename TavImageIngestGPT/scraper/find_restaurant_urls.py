@@ -7,15 +7,15 @@ from dotenv import load_dotenv
 from pymongo import MongoClient, UpdateOne
 from pymongo.write_concern import WriteConcern
 
-# ----------------- Config -----------------
+# Config
 DEBUG_FILE = "debug.csv"
 CREDITS = {"nearby": 0, "details": 0}
 
-# ----------------- Logging -----------------
+# Logging
 def log(msg: str) -> None:
     print(f"[LOG] {msg}")
 
-# ----------------- MongoDB -----------------
+# MongoDB (NOT USED CURRENTLY)
 """
 load_dotenv()
 
@@ -32,8 +32,8 @@ db = client["happyhour"]
 restaurants = db["restaurants_raw"]
 # restaurants_wc = restaurants.with_options(write_concern=WriteConcern(w=1, j=False))
 """
-# ----------------- Google Places v1 -----------------
 
+# Google Places v1 API
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
@@ -105,7 +105,7 @@ def get_place_details(place_id: str):
         log(f"[WARN] get_place_details JSON decode failed for {place_id}: {resp.text[:200]}")
         return {}
 
-# ----------------- Persistence -----------------
+# Persistence
 def save_progress_bulk(data_rows, batch_size=200):
     ops, flat_rows = [], []
     for d in data_rows:
@@ -137,18 +137,11 @@ def save_progress_bulk(data_rows, batch_size=200):
         ops.append(UpdateOne({"_id": flat["_id"]}, {"$set": flat}, upsert=True))
         flat_rows.append(flat)
 
-        #if len(ops) >= batch_size:
-           # restaurants_wc.bulk_write(ops, ordered=False)
-            #ops.clear()
-
-    #if ops:
-       # restaurants_wc.bulk_write(ops, ordered=False)
-
     if flat_rows:
         pd.DataFrame(flat_rows).to_csv(DEBUG_FILE, index=False, mode ="a", header=not os.path.exists(DEBUG_FILE))
     log(f"🍜 Upserts this batch: {len(flat_rows)} | 💾 CSV: {DEBUG_FILE}")
 
-# ----------------- Search (quad split on 20-cap) -----------------
+# Search (quad split on 20-cap)
 def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
     lat_m = (ne_lat - sw_lat) * 110_574
     lng_m = (ne_lng - sw_lng) * (111_320 * math.cos(math.radians((ne_lat + sw_lat) / 2.0)))
@@ -170,9 +163,7 @@ def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
         search_box(mid_lat, mid_lng, sw_lat, sw_lng, seen, data_rows, min_size_m)
         return
 
-    # Leaf: pull details for any unseen places
-
-    GOOD_STATUSES = {"OPERATIONAL"}  # keep near top if you prefer
+    GOOD_STATUSES = {"OPERATIONAL"}
 
     for r in results:
         pid = r.get("id")
@@ -198,8 +189,6 @@ def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
             continue
 
         # Only now fetch details (spend the credit)
-
-        # Details-level status gate
         details = get_place_details(pid)
         if not details:
             continue
@@ -212,27 +201,17 @@ def search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows, min_size_m=200):
             save_progress_bulk(data_rows)
             data_rows.clear()
 
-        
-
-# ----------------- Main -----------------
 def main(ne_lat, ne_lng, sw_lat, sw_lng):
     seen = set()
-    #seen = load_seen()
-
     data_rows = []
-
     search_box(ne_lat, ne_lng, sw_lat, sw_lng, seen, data_rows)
-
-    # Final flush
     if data_rows:
         save_progress_bulk(data_rows)
-
     log("✅ Finished.")
     log("--- CREDIT USAGE ---")
     log(f"Nearby calls: {CREDITS['nearby']} | Detail calls: {CREDITS['details']}")
 
 if __name__ == "__main__":
-    # Example: SF bounds
     NE_LAT, NE_LNG = 37.8108, -122.3569
     SW_LAT, SW_LNG = 37.7068, -122.5158
     main(NE_LAT, NE_LNG, SW_LAT, SW_LNG)

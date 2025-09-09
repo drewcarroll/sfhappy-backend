@@ -1,5 +1,8 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import json
-import TavImageIngestGPT.scraper.get_happy_hour_details as get_happy_hour_details
+from scraper.get_happy_hour_details import get_happy_hour_details
 
 if __name__ == "__main__":
     restaurant_urls = [

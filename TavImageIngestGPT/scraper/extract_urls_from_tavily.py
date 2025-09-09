@@ -1,6 +1,6 @@
-import extract_secondary_links
+from scraper.extract_secondary_links import extract_secondary_links
 
-def extract_urls_from_tavily(response, base_url, img_exts=(".pdf", ".png", ".jpg", ".jpeg")):
+def extract_urls_from_tavily(response, base_url):
     if not response or "results" not in response:
         return []
 
