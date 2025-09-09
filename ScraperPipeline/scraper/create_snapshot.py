@@ -34,3 +34,8 @@ def create_snapshot(url: str) -> str:
     except Exception as e:
         print(f"Failed to create snapshot for {url}: {e}")
         raise
+
+if __name__ == "__main__":
+    test_url = "https://www.delarosasf.com/menus-bishop-ranch/#happy-hour-sanramon"
+    path = create_snapshot(test_url)
+    print(f"Saved screenshot at {path}")
