@@ -1,11 +1,21 @@
+import os
+import io
+import requests
+import pdfplumber
+from pdf2image import convert_from_bytes
+import pytesseract
+from PIL import Image
+
 def extract_data_ocr(file_url: str) -> str:
     all_text = []
 
     if file_url.startswith("http://") or file_url.startswith("https://"):
+        # Fetch remote file
         resp = requests.get(file_url)
         resp.raise_for_status()
         content = resp.content
     else:
+        # Local file
         with open(file_url, "rb") as f:
             content = f.read()
 
